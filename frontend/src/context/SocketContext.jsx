@@ -2,11 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import io from "socket.io-client";
 
-// Get the socket URL from environment variables or use default
-const SOCKET_URL = import.meta.env.VITE_API_URL 
-  ? import.meta.env.VITE_API_URL.replace('/api', '') 
-  : 'http://localhost:3000';
-
+// Use a fixed URL for socket connection
+const SOCKET_URL = 'http://localhost:3000';
 console.log("Socket URL configured as:", SOCKET_URL);
 
 const SocketContext = createContext();
@@ -27,10 +24,12 @@ export const SocketProvider = ({ children }) => {
       try {
         // Create socket with reconnection options
         console.log("Connecting to socket at:", SOCKET_URL);
+        console.log("With auth user:", authUser._id);
+        
         const newSocket = io(SOCKET_URL, {
           withCredentials: true,
           reconnection: true,
-          reconnectionAttempts: 5,
+          reconnectionAttempts: 10,
           reconnectionDelay: 1000,
           timeout: 20000,
           transports: ['websocket', 'polling'],
@@ -38,8 +37,12 @@ export const SocketProvider = ({ children }) => {
 
         // Handle connection events
         newSocket.on("connect", () => {
-          console.log("Socket connected:", newSocket.id);
+          console.log("Socket connected successfully:", newSocket.id);
           setConnectionError(false);
+          
+          // Join with userId immediately after connection
+          newSocket.emit("join", authUser._id);
+          console.log("Emitted join event with userId:", authUser._id);
         });
 
         newSocket.on("connect_error", (err) => {
@@ -64,6 +67,7 @@ export const SocketProvider = ({ children }) => {
       }
     } else if (socket) {
       // Disconnect socket when user logs out
+      console.log("User logged out, disconnecting socket");
       socket.disconnect();
       setSocket(null);
     }
@@ -72,11 +76,9 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (socket === null || !authUser) return;
 
-    // Join with userId
-    socket.emit("join", authUser._id);
-
     // Listen for online users
     socket.on("getOnlineUsers", (users) => {
+      console.log("Received online users:", users);
       setOnlineUsers(users);
     });
 
@@ -111,6 +113,7 @@ export const SocketProvider = ({ children }) => {
   // Function to join a group chat
   const joinGroup = (groupId) => {
     if (socket) {
+      console.log("Joining group:", groupId);
       socket.emit("joinGroup", groupId);
     }
   };
