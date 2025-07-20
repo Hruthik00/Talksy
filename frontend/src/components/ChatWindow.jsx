@@ -3,8 +3,6 @@ import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useSocket } from "../context/SocketContext";
 import { Send, Image, Smile, Info, Users, MessageCircle, X } from "lucide-react";
-import data from '@emoji-mart/data';
-import Picker from '@emoji-mart/react';
 import GroupInfoModal from "./GroupInfoModal";
 
 const ChatWindow = () => {
@@ -28,8 +26,6 @@ const ChatWindow = () => {
   const [message, setMessage] = useState("");
   const [image, setImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
   
   const messagesEndRef = useRef(null);
@@ -129,7 +125,6 @@ const ChatWindow = () => {
       setMessage("");
       setImage(null);
       setPreviewImage(null);
-      setIsEmojiPickerOpen(false);
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -154,9 +149,9 @@ const ChatWindow = () => {
     reader.readAsDataURL(file);
   };
   
-  const handleEmojiSelect = (emoji) => {
-    setMessage(prev => prev + emoji.native);
-    setIsEmojiPickerOpen(false);
+  // Simple emoji insertion
+  const addEmoji = (emoji) => {
+    setMessage(prev => prev + emoji);
   };
   
   const formatTime = (timestamp) => {
@@ -178,6 +173,9 @@ const ChatWindow = () => {
       </div>
     );
   }
+  
+  // Common emojis
+  const commonEmojis = ["😊", "👍", "❤️", "😂", "🙏", "👋", "🎉", "🔥"];
   
   return (
     <div className="flex-1 flex flex-col h-full">
@@ -250,12 +248,14 @@ const ChatWindow = () => {
                       <img 
                         src={msg.image} 
                         alt="Message attachment" 
-                        className="rounded-md max-w-full max-h-60 object-contain"
+                        className="rounded-lg max-w-full" 
                       />
                     </div>
                   )}
                   
-                  {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
+                  {msg.content && (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
                   
                   <p className={`text-xs mt-1 ${isSentByMe ? "text-primary-content/70" : "text-base-content/70"}`}>
                     {formatTime(msg.createdAt)}
@@ -285,32 +285,25 @@ const ChatWindow = () => {
       {/* Message Input */}
       <div className="p-4 border-t border-base-200">
         {previewImage && (
-          <div className="mb-2 relative inline-block">
+          <div className="mb-2 relative w-24 h-24">
             <img 
               src={previewImage} 
               alt="Preview" 
-              className="h-20 rounded-md object-contain"
+              className="w-full h-full object-cover rounded-lg" 
             />
             <button 
-              className="absolute top-1 right-1 btn btn-xs btn-circle btn-error"
+              className="absolute -top-2 -right-2 bg-error text-white rounded-full p-1"
               onClick={() => {
                 setPreviewImage(null);
                 setImage(null);
               }}
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </div>
         )}
         
         <div className="flex items-center gap-2">
-          <button 
-            className="btn btn-circle btn-ghost"
-            onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-          >
-            <Smile size={20} />
-          </button>
-          
           <button 
             className="btn btn-circle btn-ghost"
             onClick={() => fileInputRef.current?.click()}
@@ -325,33 +318,38 @@ const ChatWindow = () => {
             />
           </button>
           
-          <div className="relative flex-1">
-            <textarea 
-              className="textarea textarea-bordered w-full resize-none"
-              placeholder="Type a message..."
-              rows={1}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            
-            {isEmojiPickerOpen && (
-              <div className="absolute bottom-full mb-2">
-                <Picker 
-                  data={data} 
-                  onEmojiSelect={handleEmojiSelect}
-                  theme="light"
-                />
-              </div>
-            )}
+          <div className="dropdown dropdown-top dropdown-end">
+            <label tabIndex={0} className="btn btn-circle btn-ghost">
+              <Smile size={20} />
+            </label>
+            <div tabIndex={0} className="dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-52 flex flex-wrap gap-2">
+              {commonEmojis.map(emoji => (
+                <button 
+                  key={emoji} 
+                  className="text-xl cursor-pointer hover:bg-base-200 p-1 rounded"
+                  onClick={() => addEmoji(emoji)}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           </div>
+          
+          <textarea 
+            className="textarea textarea-bordered flex-1 resize-none"
+            placeholder="Type a message..."
+            rows="1"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
           
           <button 
             className="btn btn-circle btn-primary"
             onClick={handleSendMessage}
-            disabled={(!message.trim() && !image)}
+            disabled={!message.trim() && !image}
           >
-            <Send size={18} />
+            <Send size={20} />
           </button>
         </div>
       </div>
@@ -359,7 +357,7 @@ const ChatWindow = () => {
       {/* Group Info Modal */}
       {isGroup && (
         <GroupInfoModal 
-          isOpen={isGroupInfoModalOpen} 
+          isOpen={isGroupInfoModalOpen}
           onClose={() => setIsGroupInfoModalOpen(false)}
           group={selectedGroup}
         />

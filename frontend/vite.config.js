@@ -11,16 +11,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: true,
-    rollupOptions: {
-      external: ['emoji-mart'],
-    }
+    minify: true
   },
   define: {
     // Make sure environment variables are properly exposed
     'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3000/api')
-  },
-  optimizeDeps: {
-    include: ['emoji-mart']
   }
 })
