@@ -2,8 +2,9 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // Get the API URL from environment variables or use default
+// Make sure we're using the correct API URL format
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-console.log("API URL:", API_URL);
+console.log("API URL being used:", API_URL);
 
 // Create axios instance with the correct backend URL
 export const axiosInstance = axios.create({
@@ -18,7 +19,8 @@ export const axiosInstance = axios.create({
 // Add request interceptor
 axiosInstance.interceptors.request.use(
     (config) => {
-        // You can modify request config here (add tokens, etc.)
+        // Log the request URL for debugging
+        console.log(`Request to: ${config.baseURL}${config.url}`);
         return config;
     },
     (error) => {
@@ -43,9 +45,10 @@ axiosInstance.interceptors.response.use(
         } else if (error.response.status === 401) {
             console.error('Authentication Error:', error);
             // Handle unauthorized access
+            toast.error('Authentication failed. Please log in again.');
         } else if (error.response.status === 404) {
-            console.error('Not Found Error:', error);
-            toast.error('Resource not found.');
+            console.error('Not Found Error:', error.request?.responseURL || error.config?.url);
+            toast.error('Resource not found. Please check the API endpoint.');
         } else {
             console.error('API Error:', error);
             toast.error(errorMessage);
