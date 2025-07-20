@@ -6,10 +6,11 @@ export const useThemeStore = create(
     (set) => ({
       theme: "coffee", // Default theme
       setTheme: (theme) => {
-        // Apply theme to document
+        // Apply theme to document immediately
         document.documentElement.setAttribute("data-theme", theme);
         // Update state
         set({ theme });
+        console.log(`Theme changed to: ${theme}`);
       },
     }),
     {
@@ -19,6 +20,7 @@ export const useThemeStore = create(
         // Apply theme when rehydrating from storage
         if (state && state.theme) {
           document.documentElement.setAttribute("data-theme", state.theme);
+          console.log(`Theme restored from storage: ${state.theme}`);
         }
       },
     }

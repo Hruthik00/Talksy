@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import io from "socket.io-client";
 
@@ -17,94 +17,99 @@ export const SocketProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState({}); // userId: boolean
   const [connectionError, setConnectionError] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const { authUser } = useAuthStore();
 
+  // Initialize socket connection
+  const initializeSocket = useCallback(() => {
+    if (!authUser || isConnecting) return;
+    
+    try {
+      setIsConnecting(true);
+      console.log("Initializing socket connection to:", SOCKET_URL);
+      console.log("With auth user:", authUser._id);
+      
+      // Create socket with reconnection options
+      const newSocket = io(SOCKET_URL, {
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        transports: ['websocket', 'polling'],
+      });
+
+      // Handle connection events
+      newSocket.on("connect", () => {
+        console.log("Socket connected successfully:", newSocket.id);
+        setConnectionError(false);
+        setIsConnecting(false);
+        
+        // Join with userId immediately after connection
+        newSocket.emit("join", authUser._id);
+        console.log("Emitted join event with userId:", authUser._id);
+        
+        // Request online users list
+        newSocket.emit("getOnlineUsers");
+      });
+
+      newSocket.on("connect_error", (err) => {
+        console.error("Socket connection error:", err.message);
+        setConnectionError(true);
+        setIsConnecting(false);
+      });
+
+      newSocket.on("disconnect", (reason) => {
+        console.log("Socket disconnected:", reason);
+        setIsConnecting(false);
+      });
+
+      // Set up event listeners
+      newSocket.on("getOnlineUsers", (users) => {
+        console.log("Received online users:", users);
+        setOnlineUsers(users);
+      });
+
+      newSocket.on("typing", (data) => {
+        console.log("Typing event received:", data);
+        setTypingUsers((prev) => ({ ...prev, [data.senderId]: true }));
+      });
+
+      newSocket.on("stopTyping", (data) => {
+        console.log("Stop typing event received:", data);
+        setTypingUsers((prev) => ({ ...prev, [data.senderId]: false }));
+      });
+
+      setSocket(newSocket);
+
+      return () => {
+        console.log("Cleaning up socket connection");
+        newSocket.disconnect();
+      };
+    } catch (error) {
+      console.error("Socket initialization error:", error);
+      setConnectionError(true);
+      setIsConnecting(false);
+    }
+  }, [authUser, isConnecting]);
+
+  // Initialize or clean up socket based on auth state
   useEffect(() => {
     if (authUser) {
-      try {
-        // Create socket with reconnection options
-        console.log("Connecting to socket at:", SOCKET_URL);
-        console.log("With auth user:", authUser._id);
-        
-        const newSocket = io(SOCKET_URL, {
-          withCredentials: true,
-          reconnection: true,
-          reconnectionAttempts: 10,
-          reconnectionDelay: 1000,
-          timeout: 20000,
-          transports: ['websocket', 'polling'],
-        });
-
-        // Handle connection events
-        newSocket.on("connect", () => {
-          console.log("Socket connected successfully:", newSocket.id);
-          setConnectionError(false);
-          
-          // Join with userId immediately after connection
-          newSocket.emit("join", authUser._id);
-          console.log("Emitted join event with userId:", authUser._id);
-        });
-
-        newSocket.on("connect_error", (err) => {
-          console.error("Socket connection error:", err.message);
-          setConnectionError(true);
-        });
-
-        newSocket.on("disconnect", (reason) => {
-          console.log("Socket disconnected:", reason);
-        });
-
-        setSocket(newSocket);
-
-        // Clean up on unmount
-        return () => {
-          console.log("Cleaning up socket connection");
-          newSocket.disconnect();
-        };
-      } catch (error) {
-        console.error("Socket initialization error:", error);
-        setConnectionError(true);
-      }
+      const cleanup = initializeSocket();
+      return cleanup;
     } else if (socket) {
       // Disconnect socket when user logs out
       console.log("User logged out, disconnecting socket");
       socket.disconnect();
       setSocket(null);
+      setOnlineUsers([]);
+      setTypingUsers({});
     }
-  }, [authUser]);
-
-  useEffect(() => {
-    if (socket === null || !authUser) return;
-
-    // Listen for online users
-    socket.on("getOnlineUsers", (users) => {
-      console.log("Received online users:", users);
-      setOnlineUsers(users);
-    });
-
-    // Listen for typing indicators
-    socket.on("typing", (data) => {
-      console.log("Typing event received:", data);
-      setTypingUsers((prev) => ({ ...prev, [data.senderId]: true }));
-    });
-
-    socket.on("stopTyping", (data) => {
-      console.log("Stop typing event received:", data);
-      setTypingUsers((prev) => ({ ...prev, [data.senderId]: false }));
-    });
-
-    // Request online users when connected
-    socket.emit("getOnlineUsers");
-
-    return () => {
-      socket.off("getOnlineUsers");
-      socket.off("typing");
-      socket.off("stopTyping");
-    };
-  }, [socket, authUser]);
+  }, [authUser, initializeSocket, socket]);
 
   // Function to emit typing event
-  const sendTypingStatus = (receiverId, isTyping) => {
+  const sendTypingStatus = useCallback((receiverId, isTyping) => {
     if (socket && authUser) {
       const data = {
         senderId: authUser._id,
@@ -114,15 +119,15 @@ export const SocketProvider = ({ children }) => {
       console.log(`Emitting ${isTyping ? "typing" : "stopTyping"} event:`, data);
       socket.emit(isTyping ? "typing" : "stopTyping", data);
     }
-  };
+  }, [socket, authUser]);
 
   // Function to join a group chat
-  const joinGroup = (groupId) => {
+  const joinGroup = useCallback((groupId) => {
     if (socket) {
       console.log("Joining group:", groupId);
       socket.emit("joinGroup", groupId);
     }
-  };
+  }, [socket]);
 
   const value = {
     socket,
@@ -131,6 +136,7 @@ export const SocketProvider = ({ children }) => {
     connectionError,
     sendTypingStatus,
     joinGroup,
+    isConnecting,
   };
 
   return (

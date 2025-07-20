@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { Send, Moon, Sun, Palette } from "lucide-react";
+import toast from "react-hot-toast";
 
 const PREVIEW_MESSAGES = [
   { id: 1, content: "Hey! How's it going?", isSent: false },
@@ -12,6 +13,12 @@ const PREVIEW_MESSAGES = [
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [currentTheme, setCurrentTheme] = useState(theme);
+  
+  // Sync with theme store
+  useEffect(() => {
+    setCurrentTheme(theme);
+  }, [theme]);
   
   // Filter themes by category
   const filterThemes = () => {
@@ -19,6 +26,17 @@ const SettingsPage = () => {
     if (selectedCategory === "light") return THEMES.filter(t => !t.includes("dark") && !["dracula", "night", "coffee", "business", "forest", "halloween", "luxury", "black", "dim", "nord", "sunset"].includes(t));
     if (selectedCategory === "dark") return THEMES.filter(t => t.includes("dark") || ["dracula", "night", "coffee", "business", "forest", "halloween", "luxury", "black", "dim", "nord", "sunset"].includes(t));
     return THEMES;
+  };
+  
+  // Handle theme change with feedback
+  const handleThemeChange = (newTheme) => {
+    try {
+      setTheme(newTheme);
+      toast.success(`Theme changed to ${newTheme}`);
+    } catch (error) {
+      console.error("Error changing theme:", error);
+      toast.error("Failed to change theme");
+    }
   };
 
   return (
@@ -106,9 +124,9 @@ const SettingsPage = () => {
                 key={t}
                 className={`
                   group flex flex-col items-center gap-1.5 p-3 rounded-lg transition-colors
-                  ${theme === t ? "bg-base-200" : "hover:bg-base-200/50"}
+                  ${currentTheme === t ? "bg-base-200" : "hover:bg-base-200/50"}
                 `}
-                onClick={() => setTheme(t)}
+                onClick={() => handleThemeChange(t)}
               >
                 <div className="relative h-12 w-full rounded-md overflow-hidden" data-theme={t}>
                   <div className="absolute inset-0 grid grid-cols-2 gap-px p-1">
@@ -125,7 +143,7 @@ const SettingsPage = () => {
                 <span className="text-xs font-medium truncate w-full text-center">
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </span>
-                {theme === t && (
+                {currentTheme === t && (
                   <div className="badge badge-xs badge-primary absolute top-2 right-2"></div>
                 )}
               </button>

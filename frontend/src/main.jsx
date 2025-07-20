@@ -7,17 +7,40 @@ import { SocketProvider } from "./context/SocketContext.jsx";
 import { Toaster } from "react-hot-toast";
 
 // Apply theme from localStorage on initial load
-const savedTheme = localStorage.getItem("theme-storage")
-  ? JSON.parse(localStorage.getItem("theme-storage"))?.state?.theme
-  : "coffee";
-document.documentElement.setAttribute("data-theme", savedTheme || "coffee");
+const themeStorage = localStorage.getItem("theme-storage");
+let initialTheme = "coffee"; // Default theme
+
+if (themeStorage) {
+  try {
+    const parsedStorage = JSON.parse(themeStorage);
+    if (parsedStorage.state && parsedStorage.state.theme) {
+      initialTheme = parsedStorage.state.theme;
+      console.log("Initial theme from storage:", initialTheme);
+    }
+  } catch (e) {
+    console.error("Error parsing theme from storage:", e);
+  }
+}
+
+// Apply theme immediately before rendering
+document.documentElement.setAttribute("data-theme", initialTheme);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <SocketProvider>
         <App />
-        <Toaster position="top-center" />
+        <Toaster 
+          position="top-center" 
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: 'var(--b1)',
+              color: 'var(--bc)',
+              border: '1px solid var(--b3)',
+            },
+          }}
+        />
       </SocketProvider>
     </BrowserRouter>
   </React.StrictMode>

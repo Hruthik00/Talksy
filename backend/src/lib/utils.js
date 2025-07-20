@@ -14,3 +14,6 @@ export const generateToken = (userId, res) => {
 
   return token;
 };
+
+// Alias for backward compatibility
+export const generateTokenAndSetCookie = generateToken;

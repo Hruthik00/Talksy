@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
+
 export const useAuthStore = create((set, get) => ({
   authUser: null,
   isSigningUp: false,
@@ -24,7 +25,6 @@ export const useAuthStore = create((set, get) => ({
   checkAuth: async () => {
     try {
       console.log("Checking authentication status...");
-      // Use the correct API endpoint without /api prefix
       const res = await axiosInstance.get("/auth/check");
       if (res && res.data) {
         console.log("Auth check successful:", res.data);
@@ -50,10 +50,10 @@ export const useAuthStore = create((set, get) => ({
         toast.success("Signup successful!");
         return { success: true };
       }
+      return { success: false, error: "Invalid response from server" };
     } catch (error) {
       console.error("Signup error:", error);
       const errorMessage = error.response?.data?.error || "Signup failed";
-      toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       set({ isSigningUp: false });
@@ -70,10 +70,10 @@ export const useAuthStore = create((set, get) => ({
         toast.success("Login successful!");
         return { success: true };
       }
+      return { success: false, error: "Invalid response from server" };
     } catch (error) {
       console.error("Login error:", error);
       const errorMessage = error.response?.data?.error || "Login failed";
-      toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       set({ isLoggingIn: false });
@@ -83,17 +83,16 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
-      set({ authUser: null });
       
       // Disconnect socket
       const { disconnectSocket } = get();
       disconnectSocket();
       
+      set({ authUser: null });
       toast.success("Logged out successfully");
       return true;
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Logout failed");
       return false;
     }
   },
@@ -101,7 +100,8 @@ export const useAuthStore = create((set, get) => ({
   updateProfile: async (userData) => {
     set({ isUpdatingProfile: true });
     try {
-      const res = await axiosInstance.put("/auth/update", userData);
+      // Use the correct endpoint as defined in the backend routes
+      const res = await axiosInstance.put("/auth/update-profile", userData);
       
       if (res && res.data) {
         set({ authUser: res.data });
@@ -124,7 +124,6 @@ export const useAuthStore = create((set, get) => ({
       return res.data || [];
     } catch (error) {
       console.error("Search users error:", error);
-      toast.error("Failed to search users");
       return [];
     }
   }

@@ -15,14 +15,15 @@ export const axiosInstance = axios.create({
     }
 });
 
+// Keep track of displayed error messages to prevent duplicates
+const displayedErrors = new Set();
+const ERROR_EXPIRY = 5000; // 5 seconds
+
 // Add request interceptor
 axiosInstance.interceptors.request.use(
     (config) => {
-        // Remove the duplicate /api prefix handling since it's now in the baseURL
-        
         // Log the request URL for debugging
         console.log(`Request to: ${config.baseURL}${config.url}`);
-        
         return config;
     },
     (error) => {
@@ -34,26 +35,44 @@ axiosInstance.interceptors.request.use(
 // Add response interceptor
 axiosInstance.interceptors.response.use(
     (response) => {
-        // Any status code within the range of 2xx
         return response;
     },
     (error) => {
-        // Any status codes outside the range of 2xx
-        const errorMessage = error.response?.data?.message || 'Network error. Please try again.';
+        // Generate a unique error key
+        const errorKey = `${error.config?.url}-${error.response?.status || 'network'}-${Date.now()}`;
         
-        if (!error.response) {
-            console.error('Network Error:', error);
-            toast.error('Network error. Please check your connection.');
-        } else if (error.response.status === 401) {
-            console.error('Authentication Error:', error);
-            // Handle unauthorized access
-            toast.error('Authentication failed. Please log in again.');
-        } else if (error.response.status === 404) {
-            console.error('Not Found Error:', error.request?.responseURL || error.config?.url);
-            toast.error('Resource not found. Please check the API endpoint.');
-        } else {
-            console.error('API Error:', error);
-            toast.error(errorMessage);
+        // Only show toast if this exact error hasn't been shown recently
+        if (!displayedErrors.has(errorKey)) {
+            displayedErrors.add(errorKey);
+            
+            // Remove the error key after expiry time
+            setTimeout(() => {
+                displayedErrors.delete(errorKey);
+            }, ERROR_EXPIRY);
+            
+            if (!error.response) {
+                console.error('Network Error:', error);
+                // Don't show toast for network errors on auth/check endpoint
+                if (!error.config?.url?.includes('/auth/check')) {
+                    toast.error('Network error. Please check your connection.');
+                }
+            } else if (error.response.status === 401) {
+                console.error('Authentication Error:', error);
+                // Don't show toast for auth/check endpoint
+                if (!error.config?.url?.includes('/auth/check')) {
+                    toast.error('Session expired. Please log in again.');
+                }
+            } else if (error.response.status === 404) {
+                console.error('Not Found Error:', error.config?.url);
+                // Don't show toast for common background requests
+                if (!error.config?.url?.includes('/auth/check')) {
+                    toast.error('Resource not found.');
+                }
+            } else {
+                console.error('API Error:', error);
+                const errorMessage = error.response?.data?.error || 'An error occurred. Please try again.';
+                toast.error(errorMessage);
+            }
         }
         
         return Promise.reject(error);
