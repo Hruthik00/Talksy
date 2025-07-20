@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 // Get the API URL from environment variables or use default
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+console.log("API URL:", API_URL);
 
 // Create axios instance with the correct backend URL
 export const axiosInstance = axios.create({

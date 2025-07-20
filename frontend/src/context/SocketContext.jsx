@@ -24,6 +24,7 @@ export const SocketProvider = ({ children }) => {
     if (authUser) {
       try {
         // Create socket with reconnection options
+        console.log("Connecting to socket at:", SOCKET_URL);
         const newSocket = io(SOCKET_URL, {
           withCredentials: true,
           reconnection: true,
