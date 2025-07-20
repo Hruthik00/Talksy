@@ -27,6 +27,7 @@ const ChatWindow = () => {
   const [image, setImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);

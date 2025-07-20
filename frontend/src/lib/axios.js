@@ -21,6 +21,12 @@ axiosInstance.interceptors.request.use(
     (config) => {
         // Log the request URL for debugging
         console.log(`Request to: ${config.baseURL}${config.url}`);
+        
+        // Make sure URL starts with /
+        if (config.url && !config.url.startsWith('/')) {
+            config.url = `/${config.url}`;
+        }
+        
         return config;
     },
     (error) => {

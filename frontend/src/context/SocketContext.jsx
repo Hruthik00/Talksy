@@ -7,6 +7,8 @@ const SOCKET_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api', '') 
   : 'http://localhost:3000';
 
+console.log("Socket URL configured as:", SOCKET_URL);
+
 const SocketContext = createContext();
 
 export const useSocket = () => {
@@ -31,6 +33,7 @@ export const SocketProvider = ({ children }) => {
           reconnectionAttempts: 5,
           reconnectionDelay: 1000,
           timeout: 20000,
+          transports: ['websocket', 'polling'],
         });
 
         // Handle connection events
