@@ -9,17 +9,18 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import { useAuthStore } from "./store/useAuthStore";
 import { useEffect } from "react";
-import { Loader } from "lucide-react";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
 
-  // Check authentication status on mount
+  // Check authentication status on mount and periodically
   useEffect(() => {
+    console.log("App: Initial auth check");
     checkAuth();
     
     // Set up periodic auth check (every 5 minutes)
     const intervalId = setInterval(() => {
+      console.log("App: Periodic auth check");
       checkAuth();
     }, 5 * 60 * 1000);
     
@@ -30,7 +31,7 @@ const App = () => {
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader className="size-10 animate-spin" />
+        <div className="loading loading-spinner loading-lg"></div>
       </div>
     );
   }

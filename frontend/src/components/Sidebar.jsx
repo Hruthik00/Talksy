@@ -15,7 +15,9 @@ const Sidebar = () => {
     groups, 
     getGroups, 
     setSelectedGroup, 
-    selectedGroup 
+    selectedGroup,
+    isLoadingChats,
+    isLoadingGroups 
   } = useChatStore();
   const { onlineUsers } = useSocket();
   
@@ -25,12 +27,11 @@ const Sidebar = () => {
   const [activeTab, setActiveTab] = useState("chats"); // "chats" or "groups"
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   
+  // Debug logging for chats and groups
   useEffect(() => {
-    if (authUser) {
-      getChats();
-      getGroups();
-    }
-  }, [getChats, getGroups, authUser]);
+    console.log("Sidebar - Current chats:", chats);
+    console.log("Sidebar - Current groups:", groups);
+  }, [chats, groups]);
   
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -39,6 +40,7 @@ const Sidebar = () => {
     try {
       const results = await searchUsers(searchQuery);
       setSearchResults(results);
+      console.log("Search results:", results);
     } catch (error) {
       console.error("Search error:", error);
     } finally {
@@ -60,6 +62,11 @@ const Sidebar = () => {
   };
   
   const renderUserItem = (user) => {
+    if (!user || !user._id) {
+      console.error("Invalid user object:", user);
+      return null;
+    }
+    
     const isSelected = selectedChat?._id === user._id;
     const online = isOnline(user._id);
     
@@ -93,6 +100,11 @@ const Sidebar = () => {
   };
   
   const renderGroupItem = (group) => {
+    if (!group || !group._id) {
+      console.error("Invalid group object:", group);
+      return null;
+    }
+    
     const isSelected = selectedGroup?._id === group._id;
     
     return (
@@ -187,7 +199,11 @@ const Sidebar = () => {
           </div>
         ) : activeTab === "chats" ? (
           <div className="space-y-2">
-            {chats.length > 0 ? (
+            {isLoadingChats ? (
+              <div className="flex justify-center p-4">
+                <span className="loading loading-spinner"></span>
+              </div>
+            ) : chats && chats.length > 0 ? (
               chats.map(renderUserItem)
             ) : (
               <div className="text-center py-4 text-base-content/70">
@@ -197,7 +213,11 @@ const Sidebar = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {groups.length > 0 ? (
+            {isLoadingGroups ? (
+              <div className="flex justify-center p-4">
+                <span className="loading loading-spinner"></span>
+              </div>
+            ) : groups && groups.length > 0 ? (
               groups.map(renderGroupItem)
             ) : (
               <div className="text-center py-4 text-base-content/70">

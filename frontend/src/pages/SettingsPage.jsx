@@ -15,6 +15,13 @@ const SettingsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentTheme, setCurrentTheme] = useState(theme);
   
+  // Debug theme state
+  useEffect(() => {
+    console.log("SettingsPage - Current theme from store:", theme);
+    console.log("SettingsPage - Current theme state:", currentTheme);
+    console.log("SettingsPage - Document theme:", document.documentElement.getAttribute("data-theme"));
+  }, [theme, currentTheme]);
+  
   // Sync with theme store
   useEffect(() => {
     setCurrentTheme(theme);
@@ -31,7 +38,17 @@ const SettingsPage = () => {
   // Handle theme change with feedback
   const handleThemeChange = (newTheme) => {
     try {
+      console.log("Changing theme to:", newTheme);
+      
+      // Force theme application to document
+      document.documentElement.setAttribute("data-theme", newTheme);
+      
+      // Update store
       setTheme(newTheme);
+      
+      // Update local state
+      setCurrentTheme(newTheme);
+      
       toast.success(`Theme changed to ${newTheme}`);
     } catch (error) {
       console.error("Error changing theme:", error);
@@ -45,6 +62,7 @@ const SettingsPage = () => {
         <div>
           <h1 className="text-2xl font-bold mb-2">Settings</h1>
           <p className="text-base-content/70">Customize your chat experience</p>
+          <p className="text-sm mt-2">Current theme: <span className="font-semibold">{currentTheme}</span></p>
         </div>
         
         <div className="divider"></div>

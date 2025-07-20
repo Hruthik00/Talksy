@@ -20,11 +20,16 @@ export const useChatStore = create((set, get) => ({
   getChats: async () => {
     set({ isLoadingChats: true });
     try {
+      console.log("Fetching chats...");
       const res = await axiosInstance.get("/messages/users");
+      console.log("Chats response:", res.data);
       set({ chats: res.data });
     } catch (error) {
-      console.log("Error in getChats:", error);
-      toast.error("Failed to load chats");
+      console.error("Error in getChats:", error);
+      // Only show toast for non-401 errors
+      if (error.response && error.response.status !== 401) {
+        toast.error("Failed to load chats");
+      }
     } finally {
       set({ isLoadingChats: false });
     }
@@ -39,8 +44,11 @@ export const useChatStore = create((set, get) => ({
       const res = await axiosInstance.get(`/messages/${userId}`);
       set({ messages: res.data });
     } catch (error) {
-      console.log("Error in getMessages:", error);
-      toast.error("Failed to load messages");
+      console.error("Error in getMessages:", error);
+      // Only show toast for non-401 errors
+      if (error.response && error.response.status !== 401) {
+        toast.error("Failed to load messages");
+      }
     } finally {
       set({ isLoadingMessages: false });
     }
@@ -56,7 +64,7 @@ export const useChatStore = create((set, get) => ({
       }));
       return res.data;
     } catch (error) {
-      console.log("Error in sendMessage:", error);
+      console.error("Error in sendMessage:", error);
       toast.error("Failed to send message");
       return null;
     } finally {
@@ -82,11 +90,16 @@ export const useChatStore = create((set, get) => ({
   getGroups: async () => {
     set({ isLoadingGroups: true });
     try {
+      console.log("Fetching groups...");
       const res = await axiosInstance.get("/groups");
+      console.log("Groups response:", res.data);
       set({ groups: res.data });
     } catch (error) {
-      console.log("Error in getGroups:", error);
-      toast.error("Failed to load groups");
+      console.error("Error in getGroups:", error);
+      // Only show toast for non-401 errors
+      if (error.response && error.response.status !== 401) {
+        toast.error("Failed to load groups");
+      }
     } finally {
       set({ isLoadingGroups: false });
     }
@@ -106,8 +119,11 @@ export const useChatStore = create((set, get) => ({
       const res = await axiosInstance.get(`/groups/${groupId}/messages`);
       set({ groupMessages: res.data });
     } catch (error) {
-      console.log("Error in getGroupMessages:", error);
-      toast.error("Failed to load group messages");
+      console.error("Error in getGroupMessages:", error);
+      // Only show toast for non-401 errors
+      if (error.response && error.response.status !== 401) {
+        toast.error("Failed to load group messages");
+      }
     } finally {
       set({ isLoadingGroupMessages: false });
     }
@@ -122,7 +138,7 @@ export const useChatStore = create((set, get) => ({
       }));
       return res.data;
     } catch (error) {
-      console.log("Error in sendGroupMessage:", error);
+      console.error("Error in sendGroupMessage:", error);
       toast.error("Failed to send message");
       return null;
     }
@@ -145,7 +161,7 @@ export const useChatStore = create((set, get) => ({
       toast.success("Group created successfully");
       return res.data;
     } catch (error) {
-      console.log("Error in createGroup:", error);
+      console.error("Error in createGroup:", error);
       toast.error("Failed to create group");
       return null;
     }

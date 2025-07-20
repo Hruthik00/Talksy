@@ -7,22 +7,22 @@ import { SocketProvider } from "./context/SocketContext.jsx";
 import { Toaster } from "react-hot-toast";
 
 // Apply theme from localStorage on initial load
-const themeStorage = localStorage.getItem("theme-storage");
 let initialTheme = "coffee"; // Default theme
 
-if (themeStorage) {
-  try {
+try {
+  const themeStorage = localStorage.getItem("theme-storage");
+  if (themeStorage) {
     const parsedStorage = JSON.parse(themeStorage);
     if (parsedStorage.state && parsedStorage.state.theme) {
       initialTheme = parsedStorage.state.theme;
-      console.log("Initial theme from storage:", initialTheme);
     }
-  } catch (e) {
-    console.error("Error parsing theme from storage:", e);
   }
+} catch (e) {
+  console.error("Error parsing theme from storage:", e);
 }
 
 // Apply theme immediately before rendering
+console.log("Applying initial theme:", initialTheme);
 document.documentElement.setAttribute("data-theme", initialTheme);
 
 ReactDOM.createRoot(document.getElementById("root")).render(

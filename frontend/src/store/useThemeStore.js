@@ -8,14 +8,16 @@ export const useThemeStore = create(
       setTheme: (theme) => {
         // Apply theme to document immediately
         document.documentElement.setAttribute("data-theme", theme);
+        console.log(`Theme changed to: ${theme}`);
+        
         // Update state
         set({ theme });
-        console.log(`Theme changed to: ${theme}`);
       },
     }),
     {
       name: "theme-storage", // Storage key
       getStorage: () => localStorage, // Use localStorage
+      partialize: (state) => ({ theme: state.theme }), // Only persist the theme
       onRehydrateStorage: () => (state) => {
         // Apply theme when rehydrating from storage
         if (state && state.theme) {
