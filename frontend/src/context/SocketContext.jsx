@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import io from "socket.io-client";
 
+// Get the socket URL from environment variables or use default
+const SOCKET_URL = import.meta.env.VITE_API_URL 
+  ? import.meta.env.VITE_API_URL.replace('/api', '') 
+  : 'http://localhost:3000';
+
 const SocketContext = createContext();
 
 export const useSocket = () => {
@@ -19,7 +24,7 @@ export const SocketProvider = ({ children }) => {
     if (authUser) {
       try {
         // Create socket with reconnection options
-        const newSocket = io("http://localhost:3000", {
+        const newSocket = io(SOCKET_URL, {
           withCredentials: true,
           reconnection: true,
           reconnectionAttempts: 5,

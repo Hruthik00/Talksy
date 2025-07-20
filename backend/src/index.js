@@ -11,11 +11,25 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 dotenv.config();
+
+// Get environment variables with defaults
+const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// Allow multiple frontend URLs in development
+const allowedOrigins = NODE_ENV === 'production' 
+  ? [FRONTEND_URL] 
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+
+console.log(`Server running in ${NODE_ENV} mode`);
+console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    origin: allowedOrigins,
     credentials: true,
   }
 });
@@ -96,20 +110,16 @@ io.on('connection', (socket) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-
 app.use(cookieParser());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'], // Allow multiple frontend URLs
+  origin: allowedOrigins,
   credentials: true, // Allow cookies to be sent with requests
 }));
 
-//app.options('*', cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/groups", groupRoutes);
 
-
-const PORT = process.env.PORT||3000;
 console.log("Using PORT:", PORT);
 
 server.listen(PORT, () => {
