@@ -1,99 +1,84 @@
-# Talksy Deployment Guide for Render
+# Deployment Guide for Chatty App
 
-This guide explains how to deploy the Talksy chat application to Render.com using the free tier.
+This guide will help you deploy the Chatty App on Render's free tier.
 
 ## Prerequisites
 
-1. [Render account](https://render.com) (free tier is sufficient)
-2. [GitHub repository](https://github.com/Hruthik00/Talksy) with your code
-3. MongoDB Atlas database
-4. Cloudinary account for image uploads
+1. A [Render](https://render.com/) account
+2. A [GitHub](https://github.com/) account with your project pushed to a repository
 
-## Deployment Steps
+## Backend Deployment
 
-### 1. Deploy the Backend Web Service
-
-1. Go to [render.com](https://render.com) and sign up/login
-2. Click "New" and select "Web Service"
-3. Connect your GitHub account and select your repository
-4. Configure the backend service:
-   - **Name**: `talksy-api` (or your preferred name)
-   - **Root Directory**: `backend`
+1. Log in to your Render account
+2. Click on "New +" and select "Web Service"
+3. Connect your GitHub repository
+4. Configure the Web Service:
+   - **Name**: `chatty-app-backend` (or any name you prefer)
    - **Environment**: `Node`
    - **Build Command**: `npm install`
-   - **Start Command**: `node src/index.js`
-   - **Plan**: Select "Free"
+   - **Start Command**: `npm start`
+   - **Root Directory**: `backend` (if your backend is in a subdirectory)
 
-5. Add these environment variables under "Environment" section:
+5. Add the following environment variables:
    - `NODE_ENV`: `production`
-   - `PORT`: `10000` 
-   - `MONGODB_URI`: Your MongoDB connection string
+   - `PORT`: `10000` (Render will automatically set the PORT, but you can specify it)
+   - `MONGO_URI`: Your MongoDB connection string
    - `JWT_SECRET`: Your JWT secret key
+   - `FRONTEND_URL`: The URL of your frontend (e.g., `https://chatty-app-frontend.onrender.com`)
    - `CLOUDINARY_CLOUD_NAME`: Your Cloudinary cloud name
    - `CLOUDINARY_API_KEY`: Your Cloudinary API key
    - `CLOUDINARY_API_SECRET`: Your Cloudinary API secret
 
-6. Click "Create Web Service"
-7. Wait for the service to deploy (this may take a few minutes)
-8. Once deployed, note the URL of your backend service (e.g., `https://talksy-api.onrender.com`)
+6. Select the free tier plan
+7. Click "Create Web Service"
 
-### 2. Deploy the Frontend Static Site
+## Frontend Deployment
 
-1. Return to the Render dashboard and click "New" again
-2. Select "Static Site"
-3. Connect to your GitHub repository again
-4. Configure the frontend service:
-   - **Name**: `talksy` (or your preferred name)
-   - **Root Directory**: `frontend` 
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `dist`
-   - **Plan**: Select "Free"
+1. Create a `.env` file in the frontend directory with:
+   ```
+   VITE_API_URL=https://chatty-app-backend.onrender.com
+   ```
 
-5. Add this environment variable:
-   - `VITE_API_URL`: `https://talksy-api.onrender.com/api` (use your actual backend URL)
+2. Log in to your Render account
+3. Click on "New +" and select "Static Site"
+4. Connect your GitHub repository
+5. Configure the Static Site:
+   - **Name**: `chatty-app-frontend` (or any name you prefer)
+   - **Build Command**: `cd frontend && npm install && npm run build`
+   - **Publish Directory**: `frontend/dist`
+   - **Root Directory**: Leave empty if your repo root contains both frontend and backend
 
-6. Click "Create Static Site"
-7. Wait for the static site to deploy
-8. Once deployed, Render will provide a URL for your frontend (e.g., `https://talksy.onrender.com`)
+6. Add the following environment variables:
+   - `VITE_API_URL`: The URL of your backend (e.g., `https://chatty-app-backend.onrender.com`)
 
-### 3. Update Backend CORS Settings
+7. Click "Create Static Site"
 
-1. Go back to your backend service in the Render dashboard
-2. Add a new environment variable:
-   - `FRONTEND_URL`: The URL of your frontend static site (e.g., `https://talksy.onrender.com`)
+## Important Notes
 
-3. Click "Save Changes" and wait for the service to redeploy
+1. **CORS Configuration**: The backend is already configured to accept requests from the frontend domain.
 
-### 4. Testing Your Deployment
+2. **Cookies and Authentication**: Make sure your cookies are set with:
+   - `sameSite: 'none'`
+   - `secure: true` (in production)
 
-1. Open your frontend URL in a browser
+3. **Environment Variables**: Double-check that all environment variables are set correctly.
+
+4. **Free Tier Limitations**:
+   - Render's free tier services spin down after periods of inactivity
+   - The first request after inactivity may take up to 30 seconds to respond
+   - Free tier has limited bandwidth and computing resources
+
+5. **Debugging Deployment Issues**:
+   - Check Render logs for both services
+   - Verify network requests in the browser console
+   - Ensure all environment variables are set correctly
+   - Check that CORS is properly configured
+
+## Testing Your Deployment
+
+1. Navigate to your frontend URL (e.g., `https://chatty-app-frontend.onrender.com`)
 2. Try to sign up or log in
-3. Test sending messages and other features
-4. If you encounter issues, check the logs in the Render dashboard for both services
+3. Test real-time features like messaging and typing indicators
+4. Verify that image uploads work correctly
 
-## Troubleshooting
-
-### Common Issues
-
-1. **CORS Errors**: Make sure the `FRONTEND_URL` environment variable in your backend service matches exactly with your frontend URL
-
-2. **Connection Issues**: The free tier of Render spins down services after periods of inactivity. The first request after inactivity may take up to 30 seconds to respond.
-
-3. **Environment Variables**: Double-check that all environment variables are correctly set and match your development environment
-
-4. **Build Failures**: Check the build logs in Render for any errors during the build process
-
-### Checking Logs
-
-1. Go to your service in the Render dashboard
-2. Click on the "Logs" tab to see real-time logs
-3. Look for any error messages that might indicate what's going wrong
-
-## Limitations of Free Tier
-
-1. Services on the free tier will spin down after 15 minutes of inactivity
-2. The first request after spin-down may take up to 30 seconds
-3. Free tier services have limited resources (CPU/RAM)
-4. Free static sites and web services have a soft bandwidth limit
-
-For production use with higher traffic, consider upgrading to a paid plan. 
+If you encounter any issues, check the browser console and Render logs for error messages. 

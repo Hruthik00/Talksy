@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import io from "socket.io-client";
 
-// Use a fixed URL for socket connection
-const SOCKET_URL = 'http://localhost:3000';
+// Use environment variable for socket connection
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 console.log("Socket URL configured as:", SOCKET_URL);
 
 const SocketContext = createContext();

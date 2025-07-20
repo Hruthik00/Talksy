@@ -1,8 +1,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// Create axios instance with the correct backend URL
-const API_URL = 'http://localhost:3000/api';
+// Create axios instance with environment-based API URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 console.log("API URL being used:", API_URL);
 
 // Create axios instance with the correct backend URL

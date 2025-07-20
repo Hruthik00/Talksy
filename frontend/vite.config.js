@@ -6,15 +6,16 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    host: true
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: true
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   define: {
-    // Make sure environment variables are properly exposed
-    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3000/api')
+    // Make environment variables available to the client
+    'process.env': {}
   }
 })

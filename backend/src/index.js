@@ -19,7 +19,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // Allow multiple frontend URLs in development
 const allowedOrigins = NODE_ENV === 'production' 
-  ? [FRONTEND_URL] 
+  ? [FRONTEND_URL, 'https://chatty-app-frontend.onrender.com', 'https://talksy-frontend.onrender.com'] 
   : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
 
 console.log(`Server running in ${NODE_ENV} mode`);
@@ -116,9 +116,9 @@ app.use(cors({
   credentials: true, // Allow cookies to be sent with requests
 }));
 
-app.use("/api/auth", authRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/groups", groupRoutes);
+app.use("/auth", authRoutes);
+app.use("/messages", messageRoutes);
+app.use("/groups", groupRoutes);
 
 console.log("Using PORT:", PORT);
 
