@@ -84,12 +84,17 @@ export const SocketProvider = ({ children }) => {
 
     // Listen for typing indicators
     socket.on("typing", (data) => {
+      console.log("Typing event received:", data);
       setTypingUsers((prev) => ({ ...prev, [data.senderId]: true }));
     });
 
     socket.on("stopTyping", (data) => {
+      console.log("Stop typing event received:", data);
       setTypingUsers((prev) => ({ ...prev, [data.senderId]: false }));
     });
+
+    // Request online users when connected
+    socket.emit("getOnlineUsers");
 
     return () => {
       socket.off("getOnlineUsers");
@@ -106,6 +111,7 @@ export const SocketProvider = ({ children }) => {
         receiverId,
       };
       
+      console.log(`Emitting ${isTyping ? "typing" : "stopTyping"} event:`, data);
       socket.emit(isTyping ? "typing" : "stopTyping", data);
     }
   };

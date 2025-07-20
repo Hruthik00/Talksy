@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useSocket } from "../context/SocketContext";
-import { Search, Users, Plus, MessageCircle, User } from "lucide-react";
+import { Search, Users, Plus, MessageCircle } from "lucide-react";
 import CreateGroupModal from "./CreateGroupModal";
 
 const Sidebar = () => {
@@ -26,9 +26,11 @@ const Sidebar = () => {
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   
   useEffect(() => {
-    getChats();
-    getGroups();
-  }, [getChats, getGroups]);
+    if (authUser) {
+      getChats();
+      getGroups();
+    }
+  }, [getChats, getGroups, authUser]);
   
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -51,11 +53,15 @@ const Sidebar = () => {
   };
   
   const isOnline = (userId) => {
-    return onlineUsers.includes(userId);
+    if (!onlineUsers || !Array.isArray(onlineUsers)) {
+      return false;
+    }
+    return onlineUsers.some(user => user === userId);
   };
   
   const renderUserItem = (user) => {
     const isSelected = selectedChat?._id === user._id;
+    const online = isOnline(user._id);
     
     return (
       <div 
@@ -74,7 +80,7 @@ const Sidebar = () => {
               />
             </div>
           </div>
-          {isOnline(user._id) && (
+          {online && (
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-success rounded-full border-2 border-base-100"></span>
           )}
         </div>

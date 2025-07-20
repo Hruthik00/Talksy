@@ -20,7 +20,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 // Allow multiple frontend URLs in development
 const allowedOrigins = NODE_ENV === 'production' 
   ? [FRONTEND_URL, 'https://chatty-app-frontend.onrender.com', 'https://talksy-frontend.onrender.com'] 
-  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'];
 
 console.log(`Server running in ${NODE_ENV} mode`);
 console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
@@ -36,6 +36,7 @@ const io = new Server(server, {
 
 // Socket.io connection handling
 const userSocketMap = {}; // userId -> socketId
+const onlineUsers = new Set(); // Set of online user IDs
 const groupSocketMap = {}; // groupId -> [socketIds]
 
 io.on('connection', (socket) => {
@@ -43,12 +44,27 @@ io.on('connection', (socket) => {
   
   // User joins with their userId
   socket.on('join', (userId) => {
+    if (!userId) return;
+    
     userSocketMap[userId] = socket.id;
+    onlineUsers.add(userId);
     console.log('User joined:', userId);
+    console.log('Online users:', Array.from(onlineUsers));
+    
+    // Broadcast updated online users list to all connected clients
+    io.emit('getOnlineUsers', Array.from(onlineUsers));
+  });
+
+  // Client requests online users list
+  socket.on('getOnlineUsers', () => {
+    console.log('Sending online users:', Array.from(onlineUsers));
+    socket.emit('getOnlineUsers', Array.from(onlineUsers));
   });
 
   // Join group chat
   socket.on('joinGroup', (groupId) => {
+    if (!groupId) return;
+    
     socket.join(groupId);
     if (!groupSocketMap[groupId]) {
       groupSocketMap[groupId] = [];
@@ -67,11 +83,14 @@ io.on('connection', (socket) => {
 
   // Handle group messages
   socket.on('groupMessage', (data) => {
+    if (!data || !data.groupId) return;
     io.to(data.groupId).emit('newGroupMessage', data);
   });
 
   // Handle typing indicators
   socket.on('typing', (data) => {
+    if (!data || !data.receiverId) return;
+    
     const receiverSocketId = userSocketMap[data.receiverId];
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('typing', data);
@@ -80,6 +99,8 @@ io.on('connection', (socket) => {
 
   // Handle stop typing indicators
   socket.on('stopTyping', (data) => {
+    if (!data || !data.receiverId) return;
+    
     const receiverSocketId = userSocketMap[data.receiverId];
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('stopTyping', data);
@@ -87,10 +108,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // Remove user from userSocketMap
+    // Remove user from userSocketMap and onlineUsers
+    let disconnectedUserId = null;
     for (const userId in userSocketMap) {
       if (userSocketMap[userId] === socket.id) {
+        disconnectedUserId = userId;
         delete userSocketMap[userId];
+        onlineUsers.delete(userId);
         break;
       }
     }
@@ -103,7 +127,13 @@ io.on('connection', (socket) => {
       }
     }
     
-    console.log('A user disconnected');
+    console.log('A user disconnected:', disconnectedUserId);
+    console.log('Online users after disconnect:', Array.from(onlineUsers));
+    
+    // Broadcast updated online users list
+    if (disconnectedUserId) {
+      io.emit('getOnlineUsers', Array.from(onlineUsers));
+    }
   });
 });
 
