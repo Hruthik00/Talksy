@@ -1,9 +1,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// Get the API URL from environment variables or use default
-// Make sure we're using the correct API URL format
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Create axios instance with the correct backend URL
+const API_URL = 'http://localhost:3000/api';
 console.log("API URL being used:", API_URL);
 
 // Create axios instance with the correct backend URL
@@ -19,13 +18,10 @@ export const axiosInstance = axios.create({
 // Add request interceptor
 axiosInstance.interceptors.request.use(
     (config) => {
+        // Remove the duplicate /api prefix handling since it's now in the baseURL
+        
         // Log the request URL for debugging
         console.log(`Request to: ${config.baseURL}${config.url}`);
-        
-        // Make sure URL starts with /
-        if (config.url && !config.url.startsWith('/')) {
-            config.url = `/${config.url}`;
-        }
         
         return config;
     },

@@ -23,8 +23,11 @@ export const useAuthStore = create((set, get) => ({
   
   checkAuth: async () => {
     try {
+      console.log("Checking authentication status...");
+      // Use the correct API endpoint without /api prefix
       const res = await axiosInstance.get("/auth/check");
       if (res && res.data) {
+        console.log("Auth check successful:", res.data);
         set({ authUser: res.data });
       }
     } catch (error) {
@@ -90,6 +93,7 @@ export const useAuthStore = create((set, get) => ({
       console.log("Attempting login with:", data.email);
       const res = await axiosInstance.post("/auth/login", data);
       if (res && res.data) {
+        console.log("Login successful:", res.data);
         set({ authUser: res.data });
         toast.success("Logged in successfully");
         return true;
